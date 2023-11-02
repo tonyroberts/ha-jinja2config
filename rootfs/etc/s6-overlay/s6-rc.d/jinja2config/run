@@ -1,0 +1,9 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Community Add-on: jinja2config
+# ==============================================================================
+
+bashio::log.info "Starting jinja2config..."
+
+exec /usr/bin/jinja2config.sh
