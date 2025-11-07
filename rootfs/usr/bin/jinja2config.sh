@@ -2,8 +2,8 @@
 HASS_CONFIG_DIR=$(bashio::config 'config_dir')
 CUSTOMIZE_FILE="/usr/bin/generate_jinja_customization.py"
 
-if ! type jinja > /dev/null 2>&1; then
-  echo "jinja-cli must be installed: pip install jinja-cli (https://pypi.org/project/jinja-cli/)"
+if ! type j2 > /dev/null 2>&1; then
+  echo "j2cli must be installed: pip install j2cli (https://pypi.org/project/j2cli/)"
   sleep 1
   exit 1
 fi
@@ -25,7 +25,7 @@ compile() {
   OUTPUT_FILE="$1${2/.jinja}"
   echo "# DO NOT EDIT: Generated from: $2" > "$OUTPUT_FILE"
   # Log any errors to an .errors.log file, delete if successful
-  if jinja --customize "$CUSTOMIZE_FILE" "$1$2" >> "$OUTPUT_FILE" 2> "$ERROR_LOG_FILE"; then
+  if j2 --customize "$CUSTOMIZE_FILE" "$1$2" >> "$OUTPUT_FILE" 2> "$ERROR_LOG_FILE"; then
     (rm -f "$ERROR_LOG_FILE" || true)
     echo "Formatting $OUTPUT_FILE with Prettier..."
     prettier --write "$OUTPUT_FILE" --log-level warn || true
