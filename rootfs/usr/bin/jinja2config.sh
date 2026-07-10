@@ -40,21 +40,30 @@ compile() {
   fi
 }
 
+# Recompile every *.yaml.jinja file that (transitively) imports $1.
+recompile_dependents() {
+  local changed="$1"
+  local dependent
+  python3 /etc/jinja2config/find_dependents.py "$changed" "$HASS_CONFIG_DIR" | while read -r dependent; do
+    [ -z "$dependent" ] && continue
+    echo "$changed changed, recompiling dependent: $dependent"
+    compile "$(dirname "$dependent")/" "$(basename "$dependent")"
+  done
+}
+
 echo "Compiling Jinja templates to YAML: $HASS_CONFIG_DIR/**/*.yaml.jinja"
 inotifywait -q -m -r -e modify,delete,create,move "$HASS_CONFIG_DIR" | while read DIRECTORY EVENT FILE; do
-  if [[ "$FILE" != *.yaml.jinja ]]; then continue; fi
+  # Watch every *.jinja (partials included), but skip generated side-files.
+  if [[ "$FILE" != *.jinja ]]; then continue; fi
 
   case $EVENT in
-    MODIFY*)
-      compile "$DIRECTORY" "$FILE";;
-    CREATE*)
-      compile "$DIRECTORY" "$FILE";;
-    MOVED_TO*)
-      compile "$DIRECTORY" "$FILE";;
-    DELETE*)
-      remove "$DIRECTORY" "$FILE";;
-    MOVED_FROM*)
-      remove "$DIRECTORY" "$FILE";;
+    MODIFY*|CREATE*|MOVED_TO*)
+      # *.yaml.jinja compiles to its own .yaml; plain partials do not.
+      if [[ "$FILE" == *.yaml.jinja ]]; then compile "$DIRECTORY" "$FILE"; fi
+      recompile_dependents "$DIRECTORY$FILE";;
+    DELETE*|MOVED_FROM*)
+      if [[ "$FILE" == *.yaml.jinja ]]; then remove "$DIRECTORY" "$FILE"; fi
+      recompile_dependents "$DIRECTORY$FILE";;
   esac
   sleep 0.5
 done
