@@ -20,7 +20,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     from j2_customizations import j2_environment_params
     ENV_PARAMS = j2_environment_params()
-except Exception:
+except Exception as exc:
+    # Falling back to default delimiters here would silently break dependency
+    # detection on any config using custom delimiters, so make the failure
+    # loud instead of swallowing it.
+    sys.stderr.write(
+        "find_dependents.py: could not load j2_customizations, falling back to "
+        "default delimiters (dependency detection may be wrong): %s\n" % exc
+    )
     ENV_PARAMS = {}
 
 
@@ -72,6 +79,13 @@ def find_dependents(env, changed, config_dir):
     basename_index = {}
     for f in files:
         basename_index.setdefault(os.path.basename(f), []).append(f)
+
+    # On a delete/rename the changed file is already gone from disk, so the walk
+    # above won't have found it and importers could never resolve back to it.
+    # Inject it into the lookup tables so its dependents are still discovered.
+    if changed not in files_set:
+        files_set.add(changed)
+        basename_index.setdefault(os.path.basename(changed), []).append(changed)
 
     # reverse[target] = set of files that import target
     reverse = {}
