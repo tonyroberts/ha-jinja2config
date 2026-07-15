@@ -7,6 +7,21 @@ to ``.yaml`` files.
 
 This is useful to simplify complex configuration with repeated components.
 
+### Shared partials
+
+You can factor common logic (variables, macros) into plain ``*.jinja`` files and import them
+from your ``*.yaml.jinja`` templates:
+
+```
+<% from '/config/myvariables.jinja' import hello %>
+```
+
+Plain ``*.jinja`` partials are watched too. When you edit one, every ``*.yaml.jinja`` file that
+imports it — directly or **transitively** — is recompiled automatically. Dependencies are
+discovered by parsing the templates, so all import forms (``from``, ``import``, ``include``,
+``extends``) are recognised, custom delimiters are respected, and references inside comments are
+ignored.
+
 If you find this addon useful, please consider supporting the development of this and my other addons and integrations by buying me a coffee
 
 <a href="https://www.buymeacoffee.com/tonyroberts" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50px" width="210px"></a>
